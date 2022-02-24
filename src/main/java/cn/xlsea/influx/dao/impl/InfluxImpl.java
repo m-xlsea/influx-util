@@ -5,6 +5,8 @@ import cn.xlsea.influx.utils.ReflectUtils;
 import cn.xlsea.influx.annotation.Alias;
 import cn.xlsea.influx.annotation.Tag;
 import cn.xlsea.influx.property.InfluxProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.annotation.Measurement;
@@ -21,7 +23,6 @@ import javax.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * influx工具 实现层
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
 @Component
 public class InfluxImpl implements Influx {
 
-    private final Logger log = Logger.getLogger(String.valueOf(getClass()));
+    private final Logger log = LoggerFactory.getLogger(Influx.class);
 
     @Resource
     private InfluxDB influxDB;
@@ -63,7 +64,7 @@ public class InfluxImpl implements Influx {
             return dataBaseName[0];
         }
         if (influxProperty.getDataBaseName() == null) {
-            log.severe("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
+            log.error("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
             return null;
         }
         influxDB.createDatabase(influxProperty.getDataBaseName());
@@ -79,7 +80,7 @@ public class InfluxImpl implements Influx {
             return dataBaseName[0];
         }
         if (influxProperty.getDataBaseName() == null) {
-            log.severe("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
+            log.error("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
             return null;
         }
         influxDB.deleteDatabase(influxProperty.getDataBaseName());
@@ -96,7 +97,7 @@ public class InfluxImpl implements Influx {
         // 表名
         boolean isAnnotation = clazz.isAnnotationPresent(Measurement.class);
         if (!isAnnotation) {
-            log.severe("插入的数据对应实体类需要@Measurement注解");
+            log.error("插入的数据对应实体类需要@Measurement注解");
             return 0;
         }
         Measurement annotation = clazz.getAnnotation(Measurement.class);
@@ -107,7 +108,7 @@ public class InfluxImpl implements Influx {
         int size = Lang.eleSize(object);
         String tagField = ReflectUtils.getField(object, Tag.class);
         if (tagField == null) {
-            log.severe("插入多条数据需对应实体类字段有@Tag注解");
+            log.error("插入多条数据需对应实体类字段有@Tag注解");
             return 0;
         }
         BatchPoints batchPoints = BatchPoints
@@ -151,7 +152,7 @@ public class InfluxImpl implements Influx {
                         }
                     }
                 } catch (IllegalAccessException e) {
-                    log.severe("实体转换出错");
+                    log.error("实体转换出错");
                     e.printStackTrace();
                 }
             }
@@ -166,7 +167,7 @@ public class InfluxImpl implements Influx {
     public <T> List<T> list(Class<T> clazz, String sql, String... arrays) {
         String str = arrays.length == 0 ? "" : Arrays.toString(arrays);
         if (influxProperty.getDataBaseName() == null) {
-            log.severe("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
+            log.error("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
             return null;
         }
         QueryResult results = influxDB.query(new Query(sql, influxProperty.getDataBaseName() + str), TimeUnit.MILLISECONDS);
@@ -192,7 +193,7 @@ public class InfluxImpl implements Influx {
                     list.addAll(getQueryData(clazz, columns, values));
                 }
             }
-            log.fine("sql -----> " + sql);
+            log.debug("sql -----> " + sql);
             return Json.fromJsonAsList(clazz, Json.toJson(list));
         }
         return null;
