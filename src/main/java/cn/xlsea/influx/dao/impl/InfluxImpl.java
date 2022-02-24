@@ -143,7 +143,7 @@ public class InfluxImpl implements Influx {
                         boolean tableFieldExist = ReflectUtils.getTableFieldExist(object, field.getName());
                         if (tableFieldExist) {
                             String aliasValue = ReflectUtils.getTableFieldValue(object, field.getName());
-                            if (aliasValue != null) {
+                            if (aliasValue != null && !aliasValue.equals("")) {
                                 if (aliasValue.equals("time")) {
                                     builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
                                 } else {

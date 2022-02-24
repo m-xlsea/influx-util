@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface TableField {
-    String value();
+    String value() default "";
 
     boolean exist() default true;
 }
