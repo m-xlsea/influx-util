@@ -10,11 +10,18 @@ import java.util.List;
 
 /**
  * 反射工具类
+ *
+ * @author 花花
+ * @since 2022-02-23
  */
 public class ReflectUtils {
 
     /**
-     * 类中获取使用了某个注解的字段
+     * 获取类中使用了某个注解的变量
+     *
+     * @param object 对象实体类
+     * @param annotation 注解
+     * @return String 变量名
      */
     public static String getField(Object object, Class<? extends Annotation> annotation) {
         Object first = Lang.first(object);
@@ -30,6 +37,13 @@ public class ReflectUtils {
         return null;
     }
 
+    /**
+     * 类中获取使用了某个注解的多个变量
+     *
+     * @param object 对象实体类
+     * @param annotation 注解
+     * @return List<String> 变量名集合
+     */
     public static List<String> getFields(Object object, Class<? extends Annotation> annotation) {
         Object first = Lang.first(object);
         Class<?> clazz = first.getClass();
@@ -46,7 +60,11 @@ public class ReflectUtils {
     }
 
     /**
-     * 获取注解的value
+     * 获取@Alias注解的value值
+     *
+     * @param obj 对象实体类
+     * @param str 变量名
+     * @return String @Alias注解的value值
      */
     public static String getAliasValue(Object obj, String str) {
         Object first = Lang.first(obj);

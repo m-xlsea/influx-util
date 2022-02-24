@@ -1,9 +1,9 @@
 package cn.xlsea.influx.dao.impl;
 
+import cn.xlsea.influx.dao.InfluxUtil;
 import cn.xlsea.influx.utils.ReflectUtils;
 import cn.xlsea.influx.annotation.Alias;
 import cn.xlsea.influx.annotation.Tag;
-import cn.xlsea.influx.dao.InfluxDao;
 import cn.xlsea.influx.property.InfluxProperty;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
@@ -23,8 +23,14 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+/**
+ * influx工具 实现层
+ *
+ * @author 花花
+ * @since 2022-02-23
+ */
 @Component
-public class InfluxDaoImpl implements InfluxDao {
+public class InfluxUtilImpl implements InfluxUtil {
 
     private final Logger log = Logger.getLogger(String.valueOf(getClass()));
 

@@ -4,7 +4,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 数据库
+ * 获取配置文件里数据库名称
+ *
+ * @author 花花
+ * @since 2022-02-23
  */
 @Component
 @ConfigurationProperties(prefix = "spring.influx")
