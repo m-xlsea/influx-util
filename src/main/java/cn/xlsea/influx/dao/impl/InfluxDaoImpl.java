@@ -1,10 +1,10 @@
 package cn.xlsea.influx.dao.impl;
 
+import cn.xlsea.influx.utils.ReflectUtils;
 import cn.xlsea.influx.annotation.Alias;
 import cn.xlsea.influx.annotation.Tag;
 import cn.xlsea.influx.dao.InfluxDao;
 import cn.xlsea.influx.property.InfluxProperty;
-import cn.xlsea.influx.utils.ReflectUtils;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.annotation.Measurement;
