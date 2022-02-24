@@ -39,19 +39,29 @@ public interface Influx {
      * 插入数据
      *
      * @param object 实体对象,对象集合(对应实体类必须使用@Tag注解指定一个字段)
-     * @param str 表名后需要添加的文本
+     * @param str    表名后需要添加的文本
      * @return int 插入数据条数
      */
-    <T> int insert(T object,String... str);
+    <T> int save(T object, String... str);
 
     /**
-     * 查询数据
+     * 查询多条数据
      *
      * @param clazz 实体对象,对象集合(对应实体类必须使用@Tag注解指定一个字段)
-     * @param sql 查询语句
-     * @param str 表名后需要添加的文本
-     * @return T or List<T> 返回集合或对象实体
+     * @param sql   查询语句
+     * @param str   表名后需要添加的文本
+     * @return List 返回对象集合
      */
-    <T> List<T> query(Class<T> clazz, String sql, String... str);
+    <T> List<T> list(Class<T> clazz, String sql, String... str);
+
+    /**
+     * 查询一条数据
+     *
+     * @param clazz 实体对象,对象集合(对应实体类必须使用@Tag注解指定一个字段)
+     * @param sql   查询语句
+     * @param str   表名后需要添加的文本
+     * @return T 返回对象实体
+     */
+    <T> T getOne(Class<T> clazz, String sql, String... str);
 
 }

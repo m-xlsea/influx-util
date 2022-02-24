@@ -88,7 +88,7 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> int insert(T object, String... arrays) {
+    public <T> int save(T object, String... arrays) {
         String str = arrays.length == 0 ? "" : Arrays.toString(arrays);
         // 构建一个Entity
         Object first = Lang.first(object);
@@ -130,13 +130,22 @@ public class InfluxImpl implements Influx {
                         result = objects.get(i);
                     }
                     if (field.getName().equals(tagField)) {
-                        builder.tag(tagField, field.get(result).toString());
+                        String tagValue = ReflectUtils.getTagValue(object, field.getName());
+                        if (tagValue != null) {
+                            builder.tag(tagValue, String.valueOf(field.get(result)));
+                        } else {
+                            builder.tag(tagField, String.valueOf(field.get(result)));
+                        }
                     } else if (field.getName().equals("time")) {
                         builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
                     } else {
                         String aliasValue = ReflectUtils.getAliasValue(object, field.getName());
                         if (aliasValue != null) {
-                            map.put(aliasValue, field.get(result));
+                            if (aliasValue.equals("time")) {
+                                builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                            } else {
+                                map.put(aliasValue, field.get(result));
+                            }
                         } else {
                             map.put(field.getName(), field.get(result));
                         }
@@ -154,7 +163,7 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> List<T> query(Class<T> clazz, String sql, String... arrays) {
+    public <T> List<T> list(Class<T> clazz, String sql, String... arrays) {
         String str = arrays.length == 0 ? "" : Arrays.toString(arrays);
         if (influxProperty.getDataBaseName() == null) {
             log.severe("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
@@ -187,6 +196,16 @@ public class InfluxImpl implements Influx {
             return Json.fromJsonAsList(clazz, Json.toJson(list));
         }
         return null;
+    }
+
+    @Override
+    public <T> T getOne(Class<T> clazz, String sql, String... str) {
+        List<T> list = list(clazz, sql, str);
+        if (list.size() != 0) {
+            return list.get(0);
+        } else {
+            return null;
+        }
     }
 
     /**
