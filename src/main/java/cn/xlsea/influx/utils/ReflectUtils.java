@@ -1,6 +1,6 @@
 package cn.xlsea.influx.utils;
 
-import cn.xlsea.influx.annotation.Alias;
+import cn.xlsea.influx.annotation.TableField;
 import cn.xlsea.influx.annotation.Tag;
 import org.nutz.lang.Lang;
 
@@ -61,22 +61,22 @@ public class ReflectUtils {
     }
 
     /**
-     * 获取@Alias注解的value值
+     * 获取@TableField注解的value值
      *
      * @param obj 对象实体类
      * @param str 变量名
-     * @return String @Alias注解的value值
+     * @return String @TableField注解的value值
      */
-    public static String getAliasValue(Object obj, String str) {
+    public static String getTableFieldValue(Object obj, String str) {
         Object first = Lang.first(obj);
         Field[] list = first.getClass().getDeclaredFields();
         String value = null;
         for (Field field : list) {
-            if (field.isAnnotationPresent(Alias.class)) {
+            if (field.isAnnotationPresent(TableField.class)) {
                 for (Annotation annotation : field.getDeclaredAnnotations()) {
-                    if (annotation.annotationType().equals(Alias.class)) {
+                    if (annotation.annotationType().equals(TableField.class)) {
                         if (field.getName().equals(str)) {
-                            Alias alias = (Alias) annotation;
+                            TableField alias = (TableField) annotation;
                             value = alias.value();
                         }
                     }
@@ -84,6 +84,32 @@ public class ReflectUtils {
             }
         }
         return value;
+    }
+
+    /**
+     * 获取@TableField注解的exist值
+     *
+     * @param obj 对象实体类
+     * @param str 变量名
+     * @return boolean @TableField注解的exist值
+     */
+    public static boolean getTableFieldExist(Object obj, String str) {
+        Object first = Lang.first(obj);
+        Field[] list = first.getClass().getDeclaredFields();
+        boolean exist = true;
+        for (Field field : list) {
+            if (field.isAnnotationPresent(TableField.class)) {
+                for (Annotation annotation : field.getDeclaredAnnotations()) {
+                    if (annotation.annotationType().equals(TableField.class)) {
+                        if (field.getName().equals(str)) {
+                            TableField alias = (TableField) annotation;
+                            exist = alias.exist();
+                        }
+                    }
+                }
+            }
+        }
+        return exist;
     }
 
     /**

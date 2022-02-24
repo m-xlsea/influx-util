@@ -2,7 +2,7 @@ package cn.xlsea.influx.dao.impl;
 
 import cn.xlsea.influx.dao.Influx;
 import cn.xlsea.influx.utils.ReflectUtils;
-import cn.xlsea.influx.annotation.Alias;
+import cn.xlsea.influx.annotation.TableField;
 import cn.xlsea.influx.annotation.Tag;
 import cn.xlsea.influx.property.InfluxProperty;
 import org.slf4j.Logger;
@@ -140,15 +140,18 @@ public class InfluxImpl implements Influx {
                     } else if (field.getName().equals("time")) {
                         builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
                     } else {
-                        String aliasValue = ReflectUtils.getAliasValue(object, field.getName());
-                        if (aliasValue != null) {
-                            if (aliasValue.equals("time")) {
-                                builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                        boolean tableFieldExist = ReflectUtils.getTableFieldExist(object, field.getName());
+                        if (tableFieldExist) {
+                            String aliasValue = ReflectUtils.getTableFieldValue(object, field.getName());
+                            if (aliasValue != null) {
+                                if (aliasValue.equals("time")) {
+                                    builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                                } else {
+                                    map.put(aliasValue, field.get(result));
+                                }
                             } else {
-                                map.put(aliasValue, field.get(result));
+                                map.put(field.getName(), field.get(result));
                             }
-                        } else {
-                            map.put(field.getName(), field.get(result));
                         }
                     }
                 } catch (IllegalAccessException e) {
@@ -229,9 +232,9 @@ public class InfluxImpl implements Influx {
                 if (filedName.equals("Tag")) {
                     continue;
                 }
-                List<String> fields = ReflectUtils.getFields(result, Alias.class);
+                List<String> fields = ReflectUtils.getFields(result, TableField.class);
                 for (String field : fields) {
-                    String aliasValue = ReflectUtils.getAliasValue(result, field);
+                    String aliasValue = ReflectUtils.getTableFieldValue(result, field);
                     if (filedName.equals(aliasValue)) {
                         filedName = field;
                     }

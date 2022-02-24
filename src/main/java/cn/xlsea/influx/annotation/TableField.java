@@ -13,6 +13,8 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Alias {
+public @interface TableField {
     String value();
+
+    boolean exist() default true;
 }
