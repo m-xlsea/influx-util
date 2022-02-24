@@ -132,7 +132,7 @@ public class InfluxImpl implements Influx {
                     }
                     if (field.getName().equals(tagField)) {
                         String tagValue = ReflectUtils.getTagValue(object, field.getName());
-                        if (tagValue != null) {
+                        if (tagValue != null && !tagValue.equals("")) {
                             builder.tag(tagValue, String.valueOf(field.get(result)));
                         } else {
                             builder.tag(tagField, String.valueOf(field.get(result)));
