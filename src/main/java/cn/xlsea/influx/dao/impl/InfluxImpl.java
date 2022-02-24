@@ -1,6 +1,6 @@
 package cn.xlsea.influx.dao.impl;
 
-import cn.xlsea.influx.dao.InfluxUtil;
+import cn.xlsea.influx.dao.Influx;
 import cn.xlsea.influx.utils.ReflectUtils;
 import cn.xlsea.influx.annotation.Alias;
 import cn.xlsea.influx.annotation.Tag;
@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  * @since 2022-02-23
  */
 @Component
-public class InfluxUtilImpl implements InfluxUtil {
+public class InfluxImpl implements Influx {
 
     private final Logger log = Logger.getLogger(String.valueOf(getClass()));
 

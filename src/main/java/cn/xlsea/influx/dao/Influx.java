@@ -8,7 +8,7 @@ import java.util.List;
  * @author 花花
  * @since 2022-02-23
  */
-public interface InfluxUtil {
+public interface Influx {
 
     /**
      * 测试连接
