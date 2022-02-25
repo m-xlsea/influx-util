@@ -72,7 +72,7 @@ public class InfluxImpl implements Influx {
             throw new RuntimeException("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
         }
         influxDB.createDatabase(dataBaseName);
-        log.info("创建数据库" + dataBaseName + "成功");
+        log.debug("创建数据库" + dataBaseName + "成功");
         return dataBaseName;
     }
 
@@ -81,7 +81,7 @@ public class InfluxImpl implements Influx {
         String dataBaseName = getDataBaseName(arrays);
         isExists(dataBaseName);
         influxDB.deleteDatabase(dataBaseName);
-        log.info("删除数据库 " + dataBaseName + " 成功！");
+        log.debug("删除数据库 " + dataBaseName + " 成功！");
         return dataBaseName;
     }
 
@@ -228,7 +228,7 @@ public class InfluxImpl implements Influx {
         isExists(dataBaseName);
         QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
         if (results == null) {
-            log.info("没有查询到记录");
+            log.debug("没有查询到记录");
             return 0;
         }
         if (results.hasError()) {
@@ -241,8 +241,8 @@ public class InfluxImpl implements Influx {
             return count;
         } catch (Exception e) {
             // TODO: handle exception
-            log.info("没有查询到记录");
-            return 0;
+            log.error("请检查您的语句是否正确");
+            throw new RuntimeException("Not Found Records.");
         }
     }
 
