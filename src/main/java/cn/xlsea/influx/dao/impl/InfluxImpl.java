@@ -90,7 +90,14 @@ public class InfluxImpl implements Influx {
 
     @Override
     public <T> int save(T object, String... arrays) {
-        String str = arrays.length == 0 ? "" : Arrays.toString(arrays);
+        String str = "";
+        if (arrays.length != 0) {
+            StringBuilder sb = new StringBuilder();
+            for (String string : arrays) {
+                sb.append(string);
+            }
+            str = String.valueOf(sb);
+        }
         // 构建一个Entity
         Object first = Lang.first(object);
         Class<?> clazz = first.getClass();
@@ -167,13 +174,12 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> List<T> list(Class<T> clazz, String sql, String... arrays) {
-        String str = arrays.length == 0 ? "" : Arrays.toString(arrays);
+    public <T> List<T> list(Class<T> clazz, String sql) {
         if (influxProperty.getDataBaseName() == null) {
             log.error("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
             return null;
         }
-        QueryResult results = influxDB.query(new Query(sql, influxProperty.getDataBaseName() + str), TimeUnit.MILLISECONDS);
+        QueryResult results = influxDB.query(new Query(sql, influxProperty.getDataBaseName()), TimeUnit.MILLISECONDS);
         if (results != null) {
             if (results.getResults() == null) {
                 return null;
@@ -203,9 +209,12 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> T getOne(Class<T> clazz, String sql, String... str) {
-        List<T> list = list(clazz, sql, str);
-        if (list.size() != 0) {
+    public <T> T getOne(Class<T> clazz, String sql) {
+        List<T> list = list(clazz, sql);
+        if (list.size() == 1) {
+            return list.get(0);
+        } else if (list.size() > 1) {
+            log.warn("查询结果大于一条");
             return list.get(0);
         } else {
             return null;
@@ -237,6 +246,13 @@ public class InfluxImpl implements Influx {
                     String aliasValue = ReflectUtils.getTableFieldValue(result, field);
                     if (filedName.equals(aliasValue)) {
                         filedName = field;
+                    }
+                }
+                List<String> tags = ReflectUtils.getFields(result, Tag.class);
+                for (String tag : tags) {
+                    String tagValue = ReflectUtils.getTagValue(result, tag);
+                    if (filedName.equals(tagValue)) {
+                        filedName = tag;
                     }
                 }
                 try {
