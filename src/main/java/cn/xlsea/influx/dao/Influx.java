@@ -49,7 +49,7 @@ public interface Influx {
      *
      * @param clazz 实体对象,对象集合(对应实体类必须使用@Tag注解指定一个字段)
      * @param sql   查询语句
-     * @return List 返回对象集合
+     * @return List<T> 返回对象集合
      */
     <T> List<T> list(Class<T> clazz, String sql);
 
