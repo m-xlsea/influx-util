@@ -57,39 +57,38 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public String createDataBase(String... dataBaseName) {
-        if (dataBaseName.length > 0) {
-            influxDB.createDatabase(dataBaseName[0]);
-            log.info("创建数据库" + dataBaseName[0] + "成功");
-            return dataBaseName[0];
+    public Boolean exists(String... arrays) {
+        String dataBaseName = getDataBaseName(arrays);
+        if (dataBaseName == null) {
+            throw new RuntimeException("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
         }
-        if (influxProperty.getDataBaseName() == null) {
-            log.error("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
-            return null;
-        }
-        influxDB.createDatabase(influxProperty.getDataBaseName());
-        log.info("创建数据库" + influxProperty.getDataBaseName() + "成功");
-        return influxProperty.getDataBaseName();
+        return influxDB.databaseExists(dataBaseName);
     }
 
     @Override
-    public String deleteDataBase(String... dataBaseName) {
-        if (dataBaseName.length > 0) {
-            influxDB.deleteDatabase(dataBaseName[0]);
-            log.info("删除数据库 " + dataBaseName[0] + " 成功！");
-            return dataBaseName[0];
+    public String createDataBase(String... arrays) {
+        String dataBaseName = getDataBaseName(arrays);
+        if (dataBaseName == null) {
+            throw new RuntimeException("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
         }
-        if (influxProperty.getDataBaseName() == null) {
-            log.error("如参数不指定数据库名,配置文件 spring.influx.dataBaseName 必须指定");
-            return null;
-        }
-        influxDB.deleteDatabase(influxProperty.getDataBaseName());
-        log.info("删除数据库 " + influxProperty.getDataBaseName() + " 成功！");
-        return influxProperty.getDataBaseName();
+        influxDB.createDatabase(dataBaseName);
+        log.info("创建数据库" + dataBaseName + "成功");
+        return dataBaseName;
+    }
+
+    @Override
+    public String deleteDataBase(String... arrays) {
+        String dataBaseName = getDataBaseName(arrays);
+        isExists(dataBaseName);
+        influxDB.deleteDatabase(dataBaseName);
+        log.info("删除数据库 " + dataBaseName + " 成功！");
+        return dataBaseName;
     }
 
     @Override
     public <T> int save(T object, String... arrays) {
+        String dataBaseName = influxProperty.getDataBaseName();
+        isExists(dataBaseName);
         String str = "";
         if (arrays.length != 0) {
             StringBuilder sb = new StringBuilder();
@@ -104,8 +103,7 @@ public class InfluxImpl implements Influx {
         // 表名
         boolean isAnnotation = clazz.isAnnotationPresent(Measurement.class);
         if (!isAnnotation) {
-            log.error("插入的数据对应实体类需要@Measurement注解");
-            return 0;
+            throw new RuntimeException("插入的数据对应实体类需要@Measurement注解");
         }
         Measurement annotation = clazz.getAnnotation(Measurement.class);
         // 表名
@@ -115,11 +113,10 @@ public class InfluxImpl implements Influx {
         int size = Lang.eleSize(object);
         String tagField = ReflectUtils.getField(object, Tag.class);
         if (tagField == null) {
-            log.error("插入多条数据需对应实体类字段有@Tag注解");
-            return 0;
+            throw new RuntimeException("插入多条数据需对应实体类字段有@Tag注解");
         }
         BatchPoints batchPoints = BatchPoints
-                .database(influxProperty.getDataBaseName())
+                .database(dataBaseName)
                 // 一致性
                 .consistency(ConsistencyLevel.ALL)
                 .build();
@@ -175,11 +172,15 @@ public class InfluxImpl implements Influx {
 
     @Override
     public <T> List<T> list(Class<T> clazz, String sql) {
-        if (influxProperty.getDataBaseName() == null) {
-            log.error("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
-            return null;
+        String dataBaseName = influxProperty.getDataBaseName();
+        if (dataBaseName == null) {
+            throw new RuntimeException("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
         }
-        QueryResult results = influxDB.query(new Query(sql, influxProperty.getDataBaseName()), TimeUnit.MILLISECONDS);
+        boolean exists = influxDB.databaseExists(dataBaseName);
+        if (!exists) {
+            throw new RuntimeException("数据库 " + dataBaseName + " 不存在，请检查此数据库是否存在");
+        }
+        QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
         if (results != null) {
             if (results.getResults() == null) {
                 return null;
@@ -221,10 +222,63 @@ public class InfluxImpl implements Influx {
         }
     }
 
+    @Override
+    public <T> int count(Class<T> clazz, String sql) {
+        String dataBaseName = influxProperty.getDataBaseName();
+        isExists(dataBaseName);
+        QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
+        if (results == null) {
+            log.info("没有查询到记录");
+            return 0;
+        }
+        if (results.hasError()) {
+            throw new RuntimeException(results.getError());
+        }
+        int count;
+        try {
+            Double double1 = (Double) (results.getResults().get(0).getSeries().get(0).getValues().get(0).get(1));
+            count = double1.intValue();
+            return count;
+        } catch (Exception e) {
+            // TODO: handle exception
+            log.info("没有查询到记录");
+            return 0;
+        }
+    }
+
+    /**
+     * 获取数据库名称
+     */
+    private String getDataBaseName(String... arrays) {
+        String dataBaseName = influxProperty.getDataBaseName();
+        if (arrays.length != 0) {
+            StringBuilder sb = new StringBuilder();
+            for (String string : arrays) {
+                sb.append(string);
+            }
+            dataBaseName = String.valueOf(sb);
+        }
+        return dataBaseName;
+    }
+
+    /**
+     * 判断是否存在数据库
+     */
+    private void isExists(String dataBaseName) {
+        if (dataBaseName == null) {
+            throw new RuntimeException("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
+        } else {
+            boolean exists = influxDB.databaseExists(dataBaseName);
+            if (!exists) {
+                throw new RuntimeException("数据库 " + dataBaseName + " 不存在，请检查此数据库是否存在");
+            }
+        }
+    }
+
     /**
      * 自动转换对应Pojo
      */
-    public <T> List<T> getQueryData(Class<T> clazz, List<String> columns, List<List<Object>> values) {
+    private <T> List<T> getQueryData(Class<T> clazz, List<String> columns, List<List<Object>> values) {
         List<T> results = new ArrayList<>();
         for (List<Object> list : values) {
             BeanWrapperImpl bean = null;
@@ -270,4 +324,5 @@ public class InfluxImpl implements Influx {
         }
         return results;
     }
+
 }
