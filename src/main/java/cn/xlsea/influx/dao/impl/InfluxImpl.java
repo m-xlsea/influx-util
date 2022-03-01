@@ -196,7 +196,8 @@ public class InfluxImpl implements Influx {
                     List<List<Object>> values = serie.getValues();
                     for (List<Object> value : values) {
                         Double time = (Double) value.get(0);
-                        value.set(0, time.longValue());
+                        Date date = new Date(time.longValue());
+                        value.set(0, date);
                     }
                     List<String> columns = serie.getColumns();
                     // 构建Bean
