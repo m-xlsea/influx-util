@@ -1,8 +1,0 @@
-{
-  "properties": [
-    {
-      "name": "spring.influx.dataBaseName",
-      "type": "java.lang.String"
-    }
-  ]
-}

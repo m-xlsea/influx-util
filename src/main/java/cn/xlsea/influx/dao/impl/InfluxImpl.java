@@ -87,20 +87,7 @@ public class InfluxImpl implements Influx {
 
     @Override
     public <T> int save(T object, String... arrays) {
-        String baseStr = "";
-        String tableStr = "";
-        if (arrays.length != 0) {
-            if (arrays.length == 1) {
-                baseStr = arrays[0];
-            } else if (arrays.length == 2) {
-                baseStr = arrays[0];
-                tableStr = arrays[1];
-            } else {
-                log.error("超出String[]长度......");
-                throw new RuntimeException("参数错误......");
-            }
-        }
-        String dataBaseName = influxProperty.getDataBaseName() + baseStr;
+        String dataBaseName = getDataBaseNames(arrays);
         isExists(dataBaseName);
         // 构建一个Entity
         Object first = Lang.first(object);
@@ -112,6 +99,85 @@ public class InfluxImpl implements Influx {
         }
         Measurement annotation = clazz.getAnnotation(Measurement.class);
         // 表名
+        String measurement = annotation.name();
+        Field[] arrfield = clazz.getDeclaredFields();
+        // 数据长度
+        int size = Lang.eleSize(object);
+        String tagField = ReflectUtils.getField(object, Tag.class);
+        if (tagField == null) {
+            throw new RuntimeException("插入多条数据需对应实体类字段有@Tag注解");
+        }
+        BatchPoints batchPoints = BatchPoints
+                .database(dataBaseName)
+                // 一致性
+                .consistency(ConsistencyLevel.ALL)
+                .build();
+        int count = 0;
+        for (int i = 0; i < size; i++) {
+            count++;
+            Map<String, Object> map = new HashMap<>();
+            Builder builder = Point.measurement(measurement);
+            for (Field field : arrfield) {
+                // 私有属性需要开启
+                field.setAccessible(true);
+                Object result = first;
+                try {
+                    if (size > 1) {
+                        List<?> objects = (List<?>) (object);
+                        result = objects.get(i);
+                    }
+                    if (field.getName().equals(tagField)) {
+                        String tagValue = ReflectUtils.getTagValue(object, field.getName());
+                        if (tagValue != null && !tagValue.equals("")) {
+                            builder.tag(tagValue, String.valueOf(field.get(result)));
+                        } else {
+                            builder.tag(tagField, String.valueOf(field.get(result)));
+                        }
+                    } else if (field.getName().equals("time")) {
+                        builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                    } else {
+                        boolean tableFieldExist = ReflectUtils.getTableFieldExist(object, field.getName());
+                        if (tableFieldExist) {
+                            String aliasValue = ReflectUtils.getTableFieldValue(object, field.getName());
+                            if (aliasValue != null && !aliasValue.equals("")) {
+                                if (aliasValue.equals("time")) {
+                                    builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                                } else {
+                                    map.put(aliasValue, field.get(result));
+                                }
+                            } else {
+                                map.put(field.getName(), field.get(result));
+                            }
+                        }
+                    }
+                } catch (IllegalAccessException e) {
+                    log.error("实体转换出错");
+                    e.printStackTrace();
+                }
+            }
+            builder.fields(map);
+            batchPoints.point(builder.build());
+        }
+        influxDB.write(batchPoints);
+        return count;
+    }
+
+    @Override
+    public <T> int save(T object, String baseStr, String tableStr) {
+        baseStr = baseStr != null ? baseStr : "";
+        String dataBaseName = getDataBaseNames(baseStr);
+        isExists(dataBaseName);
+        // 构建一个Entity
+        Object first = Lang.first(object);
+        Class<?> clazz = first.getClass();
+        // 表名
+        boolean isAnnotation = clazz.isAnnotationPresent(Measurement.class);
+        if (!isAnnotation) {
+            throw new RuntimeException("插入的数据对应实体类需要@Measurement注解");
+        }
+        Measurement annotation = clazz.getAnnotation(Measurement.class);
+        // 表名
+        tableStr = tableStr != null ? tableStr : "";
         String measurement = annotation.name() + tableStr;
         Field[] arrfield = clazz.getDeclaredFields();
         // 数据长度
@@ -177,7 +243,7 @@ public class InfluxImpl implements Influx {
 
     @Override
     public <T> List<T> list(Class<T> clazz, String sql, String... arrays) {
-        String dataBaseName = getDataBaseName(arrays);
+        String dataBaseName = getDataBaseNames(arrays);
         isExists(dataBaseName);
         QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
         if (results != null) {
@@ -224,7 +290,7 @@ public class InfluxImpl implements Influx {
 
     @Override
     public <T> int count(Class<T> clazz, String sql, String... arrays) {
-        String dataBaseName = getDataBaseName(arrays);
+        String dataBaseName = getDataBaseNames(arrays);
         isExists(dataBaseName);
         QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
         if (results == null) {
@@ -249,6 +315,19 @@ public class InfluxImpl implements Influx {
     /**
      * 获取数据库名称
      */
+    private String getDataBaseNames(String... arrays) {
+        String dataBaseName = influxProperty.getDataBaseName();
+        if (arrays.length != 0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(dataBaseName);
+            for (String string : arrays) {
+                sb.append(string);
+            }
+            dataBaseName = String.valueOf(sb);
+        }
+        return dataBaseName;
+    }
+
     private String getDataBaseName(String... arrays) {
         String dataBaseName = influxProperty.getDataBaseName();
         if (arrays.length != 0) {
