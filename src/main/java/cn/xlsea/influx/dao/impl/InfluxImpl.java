@@ -87,16 +87,21 @@ public class InfluxImpl implements Influx {
 
     @Override
     public <T> int save(T object, String... arrays) {
-        String dataBaseName = influxProperty.getDataBaseName();
-        isExists(dataBaseName);
-        String str = "";
+        String baseStr = "";
+        String tableStr = "";
         if (arrays.length != 0) {
-            StringBuilder sb = new StringBuilder();
-            for (String string : arrays) {
-                sb.append(string);
+            if (arrays.length == 1) {
+                baseStr = arrays[0];
+            } else if (arrays.length == 2) {
+                baseStr = arrays[0];
+                tableStr = arrays[1];
+            } else {
+                log.error("超出String[]长度......");
+                throw new RuntimeException("参数错误......");
             }
-            str = String.valueOf(sb);
         }
+        String dataBaseName = influxProperty.getDataBaseName() + baseStr;
+        isExists(dataBaseName);
         // 构建一个Entity
         Object first = Lang.first(object);
         Class<?> clazz = first.getClass();
@@ -107,7 +112,7 @@ public class InfluxImpl implements Influx {
         }
         Measurement annotation = clazz.getAnnotation(Measurement.class);
         // 表名
-        String measurement = annotation.name() + str;
+        String measurement = annotation.name() + tableStr;
         Field[] arrfield = clazz.getDeclaredFields();
         // 数据长度
         int size = Lang.eleSize(object);
@@ -171,15 +176,9 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> List<T> list(Class<T> clazz, String sql) {
-        String dataBaseName = influxProperty.getDataBaseName();
-        if (dataBaseName == null) {
-            throw new RuntimeException("查询数据时配置文件 spring.influx.dataBaseName 必须指定");
-        }
-        boolean exists = influxDB.databaseExists(dataBaseName);
-        if (!exists) {
-            throw new RuntimeException("数据库 " + dataBaseName + " 不存在，请检查此数据库是否存在");
-        }
+    public <T> List<T> list(Class<T> clazz, String sql, String... arrays) {
+        String dataBaseName = getDataBaseName(arrays);
+        isExists(dataBaseName);
         QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
         if (results != null) {
             if (results.getResults() == null) {
@@ -211,8 +210,8 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> T getOne(Class<T> clazz, String sql) {
-        List<T> list = list(clazz, sql);
+    public <T> T getOne(Class<T> clazz, String sql, String... arrays) {
+        List<T> list = list(clazz, sql, arrays);
         if (list.size() == 1) {
             return list.get(0);
         } else if (list.size() > 1) {
@@ -224,8 +223,8 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> int count(Class<T> clazz, String sql) {
-        String dataBaseName = influxProperty.getDataBaseName();
+    public <T> int count(Class<T> clazz, String sql, String... arrays) {
+        String dataBaseName = getDataBaseName(arrays);
         isExists(dataBaseName);
         QueryResult results = influxDB.query(new Query(sql, dataBaseName), TimeUnit.MILLISECONDS);
         if (results == null) {

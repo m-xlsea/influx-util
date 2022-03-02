@@ -54,7 +54,7 @@ public interface Influx {
      * @param str    表名后需要添加的文本
      * @return int 插入数据条数
      */
-    <T> int save(T object, String... str);
+    <T> int save(T object, String... arrays);
 
     /**
      * 查询多条数据
@@ -63,7 +63,7 @@ public interface Influx {
      * @param sql   查询语句
      * @return List<T> 返回对象集合
      */
-    <T> List<T> list(Class<T> clazz, String sql);
+    <T> List<T> list(Class<T> clazz, String sql, String... str);
 
     /**
      * 查询一条数据（如果集，默认返回第一条）
@@ -72,7 +72,7 @@ public interface Influx {
      * @param sql   查询语句
      * @return T 返回对象实体
      */
-    <T> T getOne(Class<T> clazz, String sql);
+    <T> T getOne(Class<T> clazz, String sql, String... str);
 
     /**
      * 查询记录数
@@ -81,6 +81,6 @@ public interface Influx {
      * @param sql   查询语句
      * @return int 记录数
      */
-    <T> int count(Class<T> clazz, String sql);
+    <T> int count(Class<T> clazz, String sql, String... str);
 
 }
