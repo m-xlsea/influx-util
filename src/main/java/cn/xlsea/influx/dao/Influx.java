@@ -78,10 +78,9 @@ public interface Influx {
      * 插入数据
      *
      * @param object 实体对象,对象集合（对应实体类必须使用@Tag注解指定一个字段）
-     * @param str    表名称后缀
      * @return int 插入数据条数
      */
-    <T> int save(T object, String... str);
+    <T> int save(T object);
 
     /**
      * 插入数据

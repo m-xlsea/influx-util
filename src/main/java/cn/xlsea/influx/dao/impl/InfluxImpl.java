@@ -100,9 +100,9 @@ public class InfluxImpl implements Influx {
     }
 
     @Override
-    public <T> int save(T object, String... arrays) {
+    public <T> int save(T object) {
         String dataBaseName = influxProperty.getDataBaseName();
-        return save(object, dataBaseName, arrays);
+        return save(object, dataBaseName);
     }
 
     @Override
