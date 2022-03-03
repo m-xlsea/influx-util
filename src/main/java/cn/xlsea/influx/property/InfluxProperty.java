@@ -15,13 +15,6 @@ public class InfluxProperty {
 
     private String dataBaseName;    // 数据库名
 
-    public InfluxProperty() {
-    }
-
-    public InfluxProperty(String dataBaseName) {
-        this.dataBaseName = dataBaseName;
-    }
-
     public String getDataBaseName() {
         return dataBaseName;
     }
@@ -29,4 +22,5 @@ public class InfluxProperty {
     public void setDataBaseName(String dataBaseName) {
         this.dataBaseName = dataBaseName;
     }
+
 }
