@@ -161,14 +161,18 @@ public class InfluxImpl implements Influx {
                             builder.tag(tagField, String.valueOf(field.get(result)));
                         }
                     } else if (field.getName().equals("time")) {
-                        builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                        Date date = (Date) field.get(result);
+                        long time = date.getTime();
+                        builder.time(time, TimeUnit.MILLISECONDS);
                     } else {
                         boolean tableFieldExist = ReflectUtils.getTableFieldExist(object, field.getName());
                         if (tableFieldExist) {
                             String aliasValue = ReflectUtils.getTableFieldValue(object, field.getName());
                             if (aliasValue != null && !aliasValue.equals("")) {
                                 if (aliasValue.equals("time")) {
-                                    builder.time(Long.parseLong(String.valueOf(field.get(result))), TimeUnit.MILLISECONDS);
+                                    Date date = (Date) field.get(result);
+                                    long time = date.getTime();
+                                    builder.time(time, TimeUnit.MILLISECONDS);
                                 } else {
                                     map.put(aliasValue, field.get(result));
                                 }
